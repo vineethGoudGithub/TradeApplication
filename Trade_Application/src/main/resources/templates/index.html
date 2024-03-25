@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Trading Application</title>
+
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom CSS -->
+  <style>
+    
+  </style>
+</head>
+<body>
+  <div class="container">
+   
+    <div class="mt-5">
+      <h2>Enter Trade Details</h2>
+      <form id="tradeForm">
+        <div class="form-group">
+          <input type="datetime-local" class="form-control" name="tradeDateTime" required>
+        </div>
+        <div class="form-group">
+          <input type="text" class="form-control" name="stockName" placeholder="Stock Name" required>
+        </div>
+        <div class="form-group">
+          <input type="number" class="form-control" name="listingPrice" placeholder="Listing Price" required>
+        </div>
+        <div class="form-group">
+          <input type="number" class="form-control" name="quantity" placeholder="Quantity" required>
+        </div>
+        <div class="form-group">
+          <select class="form-control" name="tradeType" required>
+            <option value="">Select Trade Type</option>
+            <option value="buy">Buy</option>
+            <option value="sell">Sell</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <input type="number" class="form-control" name="pricePerUnit" placeholder="Price Per Unit" required>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="submitTrade()">Submit</button>
+      </form>
+    </div>
+ 
+    <div class="mt-5">
+      <h2>Trade List</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date Time</th>
+            <th>Stock Name</th>
+            <th>Listing Price</th>
+            <th>Quantity</th>
+            <th>Trade Type</th>
+            <th>Price Per Unit</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="tradeTableBody">
+         
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Bootstrap JS and Custom JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+    const baseUrl = 'http://localhost:8080';
+    
+   
+    async function fetchTrades() {
+      try {
+        const response = await fetch(`${baseUrl}/trades`);
+        const trades = await response.json();
+        const tradeTableBody = document.getElementById('tradeTableBody');
+        tradeTableBody.innerHTML = '';
+        trades.forEach(trade => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${trade.tradeDateTime}</td>
+            <td>${trade.stockName}</td>
+            <td>${trade.listingPrice}</td>
+            <td>${trade.quantity}</td>
+            <td>${trade.tradeType}</td>
+            <td>${trade.pricePerUnit}</td>
+            <td><button class="btn btn-success" onclick="createOrder(${trade.tradeId})">Create Order</button></td>
+          `;
+          tradeTableBody.appendChild(row);
+        });
+      } catch (error) {
+        console.error('Error fetching trades:', error);
+      }
+    }
+
+    async function submitTrade() {
+      const tradeForm = document.getElementById('tradeForm');
+      const formData = new FormData(tradeForm);
+      const tradeData = {};
+      formData.forEach((value, key) => {
+        tradeData[key] = value;
+      });
+      try {
+        const response = await fetch(`${baseUrl}/trades`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(tradeData)
+        });
+        if (!response.ok) {
+          throw new Error('Error submitting trade');
+        }
+        fetchTrades();
+        tradeForm.reset();
+      } catch (error) {
+        console.error('Error submitting trade:', error);
+      }
+    }
+    
+
+    async function createOrder(tradeId) {
+      try {
+        const response = await fetch(`${baseUrl}/orders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            tradeId,
+            quantity: 10, 
+            pricePerUnit: 100, 
+            tradeType: 'buy' 
+          })
+        });
+        if (!response.ok) {
+          throw new Error('Error creating order');
+        }
+        // Do something after creating order if needed
+      } catch (error) {
+        console.error('Error creating order:', error);
+      }
+    }
+    
+    // Fetch and display trades on page load
+    window.onload = fetchTrades;
+  </script>
+</body>
+</html>
+
